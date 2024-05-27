@@ -24,7 +24,7 @@ class TaskFactory extends Factory
 
         return [
             'user_id' => $this->faker->randomElement($userIds),
-            'name' => $this->faker->name,
+            'name' => $this->faker->sentence(),
             'status' => $this->faker->randomElement($statuses),
             'priority' => $this->faker->randomElement($priorities),
             'description' => $this->faker->paragraphs(rand(2, 5), true),

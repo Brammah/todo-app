@@ -1,30 +1,22 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head } from '@inertiajs/vue3';
+import { Head, usePage } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
-const accordions = ref([
-    {
-        title: 'Pending',
-        content: "We're not always in the position that we want to be at. We're constantly growing.",
-        isOpen: false
-    },
-    {
-        title: 'Backlog',
-        content: "We're not always in the position that we want to be at. We're constantly growing.",
-        isOpen: false
-    },
-    {
-        title: 'Complete',
-        content: "We're not always in the position that we want to be at. We're constantly growing.",
-        isOpen: false
-    }
-]);
+const page = usePage();
+const tasks = ref(page.props.tasks);
+
+const accordions = ref(Object.keys(tasks.value).map(status => ({
+    title: status.charAt(0).toUpperCase() + status.slice(1),
+    content: tasks.value[status],
+    isOpen: false
+})));
 
 const toggleAccordion = (index) => {
     accordions.value[index].isOpen = !accordions.value[index].isOpen;
 };
 </script>
+
 
 
 <template>
@@ -104,23 +96,25 @@ const toggleAccordion = (index) => {
                             <div v-show="accordion.isOpen"
                                 class="overflow-hidden transition-all duration-300 ease-in-out">
                                 <div class="p-4 text-sm leading-normal text-blue-gray-500/80">
-                                    <div class="border rounded-md card">
+                                    <div v-for="task in accordion.content" :key="task.id"
+                                        class="mb-2 border rounded-md card">
                                         <div class="flex items-center justify-between p-4 card-header">
                                             <div class="flex-col">
-                                                <div class="card-title">Title</div>
-                                                <div class="text-gray-600">March 25th 2024</div>
+                                                <div class="card-title">{{ task.name }}</div>
+                                                <div class="text-gray-600">{{ task.created_at }}</div>
                                             </div>
                                             <div class="card-toolbar">Toolbar</div>
                                         </div>
-                                        <div class="px-4 card-body">{{ accordion.content }}</div>
+                                        <div class="px-4 card-body">{{ task.description }}</div>
                                         <div class="my-4 card-footer">
                                             <span
                                                 class="bg-gray-100 text-gray-800 text-xs font-medium ms-4 me-2 px-2.5 py-0.5 rounded dark:bg-gray-200 dark:text-gray-800">
-                                                <i class="text-orange-400 fa-solid fa-circle me-2"></i>Pending
+                                                <i class="text-orange-400 fa-solid fa-circle me-2"></i>{{ task.status }}
                                             </span>
                                             <span
                                                 class="bg-gray-100 text-gray-800 text-xs font-medium ms-4 me-2 px-2.5 py-0.5 rounded dark:bg-gray-200 dark:text-gray-800">
-                                                <i class="text-red-600 fa-solid fa-angles-up me-2"></i> Highest
+                                                <i
+                                                    class="text-red-600 fa-solid fa-angles-up me-2"></i>{{ task.priority }}
                                             </span>
                                         </div>
                                     </div>

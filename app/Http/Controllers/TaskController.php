@@ -13,7 +13,10 @@ class TaskController extends Controller
      */
     public function index()
     {
+        $tasks = Task::with('user')->get()->groupBy('status');
+
         return Inertia::render('ToDo/ViewTodo', [
+            'tasks' => $tasks,
             'status' => session('status'),
         ]);
     }
