@@ -14,10 +14,35 @@ class TaskController extends Controller
      */
     public function index()
     {
-        $tasks = Task::with('user')->get()->groupBy('status');
+        $tasks = Task::with('user')->latest()->get()->groupBy('status');
+
+        $counts = [
+            'complete' => 0,
+            'pending' => 0,
+            'backlog' => 0,
+            'highest_priority' => 0,
+            'medium_priority' => 0,
+            'lowest_priority' => 0,
+        ];
+
+        foreach ($tasks as $status => $tasksByStatus) {
+            $counts[$status] = $tasksByStatus->count();
+        }
+
+        if (isset($tasks['pending'])) {
+            foreach ($tasks['pending'] as $task) {
+                if (isset($task->priority) && in_array($task->priority, ['highest', 'medium', 'lowest'])) {
+                    $counts[$task->priority . '_priority']++;
+                }
+            }
+        }
+
+        $user = auth()->user();
 
         return Inertia::render('ToDo/ViewTodo', [
+            'user' => $user,
             'tasks' => $tasks,
+            'counts' => $counts,
             'successMessage' => session('success'),
         ]);
     }
@@ -32,7 +57,12 @@ class TaskController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $validatedData = $this->validatedRequest($request);
+
+        DB::transaction(function () use ($validatedData) {
+            Task::create($validatedData + ['user_id' => auth()->id()]);
+            return response()->json(['success' => 'Task Created'], 200);
+        });
     }
 
     /**
@@ -56,12 +86,7 @@ class TaskController extends Controller
      */
     public function update(Request $request, Task $task)
     {
-        $validatedData = $request->validate([
-            'name' => ['required', 'string'],
-            'status' => ['required', 'string'],
-            'priority' => ['required', 'string'],
-            'description' => ['required', 'string'],
-        ]);
+        $validatedData = $this->validatedRequest($request);
 
         DB::transaction(function () use ($validatedData, $task) {
             $task->update($validatedData);
@@ -79,4 +104,13 @@ class TaskController extends Controller
         return response()->json(['success' => 'Task Deleted'], 200);
     }
 
+    private function validatedRequest(Request $request): array
+    {
+        return $request->validate([
+            'name' => ['required', 'string'],
+            'status' => ['required', 'string'],
+            'priority' => ['required', 'string'],
+            'description' => ['required', 'string'],
+        ]);
+    }
 }

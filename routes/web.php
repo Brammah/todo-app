@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ProfilePhotoController;
 use App\Http\Controllers\TaskController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -23,8 +24,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::post('/photo', ProfilePhotoController::class)->name('profile-photo.store');
 
     Route::get('/task', [TaskController::class, 'index'])->name('task.index');
+    Route::post('/task', [TaskController::class, 'store'])->name('task.store');
     Route::put('/task/{task}', [TaskController::class, 'update'])->name('task.update');
     Route::delete('/task/{task}', [TaskController::class, 'destroy'])->name('task.destroy');
 });

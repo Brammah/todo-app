@@ -11,9 +11,8 @@ const showingNavigationDropdown = ref(false);
 </script>
 
 <template>
-    <div>
-        <div class="min-h-screen bg-gray-100">
-            <nav class="bg-white border-b border-gray-100">
+    <div class="bg-white">
+            <nav class="bg-white border-b">
                 <!-- Primary Navigation Menu -->
                 <div class="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
                     <div class="flex justify-between h-16">
@@ -23,13 +22,6 @@ const showingNavigationDropdown = ref(false);
                                 <Link :href="route('dashboard')">
                                 <ApplicationLogo class="block w-auto text-gray-800 fill-current h-9" />
                                 </Link>
-                            </div>
-
-                            <!-- Navigation Links -->
-                            <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                                <NavLink :href="route('dashboard')" :active="route().current('dashboard')">
-                                    Dashboard
-                                </NavLink>
                             </div>
 
                             <!-- Navigation Links -->
@@ -118,18 +110,9 @@ const showingNavigationDropdown = ref(false);
                     </div>
                 </div>
             </nav>
-
-            <!-- Page Heading -->
-            <header class="bg-white shadow" v-if="$slots.header">
-                <div class="px-4 py-6 mx-auto max-w-7xl sm:px-6 lg:px-8">
-                    <slot name="header" />
-                </div>
-            </header>
-
             <!-- Page Content -->
             <main>
                 <slot />
             </main>
         </div>
-    </div>
 </template>

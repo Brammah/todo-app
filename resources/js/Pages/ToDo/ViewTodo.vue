@@ -1,18 +1,26 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import Modal from '/resources/js/Pages/ToDo/EditTodo.vue';
+import CreateTodoModal from '/resources/js/Pages/ToDo/CreateTodoModal.vue';
 import { Head, usePage } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import { format } from 'date-fns';
 import axios from 'axios';
 
+import CKEditor from '@ckeditor/ckeditor5-vue';
+import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
+
 const page = usePage();
 const tasks = ref(page.props.tasks);
 const successMessage = ref('');
+const errorMessage = ref(null);
 
 const formatDate = (dateString) => {
     return format(new Date(dateString), "MMMM do yyyy");
 };
+
+const counts = ref(page.props.counts);
+const { user } = usePage().props;
 
 const accordions = ref(Object.keys(tasks.value).map(status => ({
     title: status.charAt(0).toUpperCase() + status.slice(1),
@@ -48,17 +56,33 @@ const deleteTask = async (taskId) => {
     }
 };
 
+const props = defineProps({
+    successMessage: String
+});
+
 const isEditModalOpen = ref(false);
+const isCreateModalOpen = ref(false);
 const currentTask = ref(null);
+const validationErrors = ref(null);
 
 const openEditModal = (task) => {
     currentTask.value = { ...task };
     isEditModalOpen.value = true;
+    validationErrors.value = null;
 };
 
 const closeEditModal = () => {
     isEditModalOpen.value = false;
     currentTask.value = null;
+    validationErrors.value = null;
+};
+
+const openCreateModal = () => {
+    isCreateModalOpen.value = true;
+};
+
+const closeCreateModal = () => {
+    isCreateModalOpen.value = false;
 };
 
 const updateTask = async () => {
@@ -73,19 +97,24 @@ const updateTask = async () => {
         }
         closeEditModal();
         successMessage.value = 'Task updated successfully.';
-        window.location.href = `/task`;
         setTimeout(() => {
             successMessage.value = '';
         }, 3000);
     } catch (error) {
-        console.error('Error updating task:', error);
+        if (error.response.status === 422) {
+            validationErrors.value = error.response.data.errors;
+        } else {
+            console.error('Error updating task:', error);
+        }
     }
 };
 
-const props = defineProps({
-    successMessage: String
-});
-
+const taskCreated = () => {
+    successMessage.value = 'Task created successfully.';
+    setTimeout(() => {
+        successMessage.value = '';
+    }, 3000);
+};
 </script>
 
 <template>
@@ -93,20 +122,72 @@ const props = defineProps({
     <Head title="Tasks" />
 
     <AuthenticatedLayout>
-        <template #header>
-            <h2 class="text-xl font-semibold leading-tight text-gray-800">Tasks</h2>
-        </template>
-
         <div class="py-12">
+            <div v-if="successMessage" class="p-3 my-4 text-white bg-green-600 rounded-md">
+                {{ successMessage }}
+            </div>
             <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
-                <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
-                    <div class="px-8 py-4">
-                        <div v-if="successMessage" class="p-3 my-4 text-white bg-green-600 rounded-md">
-                            {{ successMessage }}
+                <div class="overflow-hidden bg-white">
+                    <div class="px-8 py-4 mb-4">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <h1 class="text-2xl font-bold me-5">
+                                    <img
+                                        v-if="user.photo"
+                                        :src="`/storage/photos/${user.photo}`"
+                                        class="object-cover w-20 h-20 mt-4 rounded-full"
+                                        alt="Image preview"
+                                    />
+                                </h1>
+
+                                <div class="flex-col">
+                                    <h2 class="text-2xl font-bold">{{ user.name }}</h2>
+                                    <p class="text-gray-500">{{ user.email }}</p>
+                                </div>
+                            </div>
+                            <div class="flex">
+                                <div class="p-5 bg-yellow-100 rounded-md card me-3">
+                                    <div class="card-header">Pending</div>
+                                    <div class="text-4xl font-bold card-body">
+                                        {{ counts.pending }}
+                                    </div>
+                                    <div class="flex card-footer">
+                                        <span class="me-2">
+                                             <i
+                                                class="text-red-600 fa-solid fa-angles-up me-1"></i>{{ counts.highest_priority }}
+                                            </span>
+                                        <span class="me-2">
+                                            <i
+                                                class="text-orange-400 fa-solid fa-equals me-1"></i> {{ counts.medium_priority }}
+                                            </span>
+                                        <span class="me-2">
+                                            <i
+                                                class="text-blue-800 fa-solid fa-angles-down me-1"></i>{{ counts.lowest_priority }}
+                                            </span>
+                                    </div>
+                                </div>
+                                <div class="p-5 bg-green-100 rounded-md card me-3">
+                                    <div class="card-header">Complete</div>
+                                    <div class="text-4xl font-bold card-body">
+                                        {{ counts.complete }}
+                                    </div>
+                                    <div class="card-footer"></div>
+                                </div>
+                                <div class="p-5 bg-gray-100 rounded-md card me-3">
+                                    <div class="card-header">Backlog</div>
+                                    <div class="text-4xl font-bold card-body">
+                                        {{ counts.backlog }}
+                                    </div>
+                                    <div class="card-footer"></div>
+                                </div>
+                            </div>
                         </div>
+                    </div>
+
+                    <div class="px-8 py-4">
                         <div class="flex items-center justify-between">
                             <h1 class="text-2xl font-bold">Pending</h1>
-                            <button
+                            <button @click="openCreateModal"
                                 class="p-2 text-white bg-indigo-500 rounded-md btn-block btn-sm hover:bg-indigo-600">
                                 <i class="fa fa-plus me-2"></i> Add Todo
                             </button>
@@ -128,7 +209,7 @@ const props = defineProps({
                                         <option value="all">All</option>
                                         <option value="pending">Pending</option>
                                         <option value="backlog">Backlog</option>
-                                        <option value="completed">Complete</option>
+                                        <option value="complete">Complete</option>
                                     </select>
                                 </div>
                                 <div class="w-full px-2 mb-4 lg:w-3/12 lg:mb-0">
@@ -142,7 +223,8 @@ const props = defineProps({
                                         </option>
                                         <option value="high"><i class="text-red-600 fa-solid fa-angle-up me-2"></i>High
                                         </option>
-                                        <option value="medium">Medium</option>
+                                        <option value="medium"> <i
+                                                class="text-red-600 fa-solid fa-equals me-2"></i> Medium</option>
                                         <option value="low"><i class="text-blue-800 fa-solid fa-angle-down me-2"></i>Low
                                         </option>
                                         <option value="lowest"><i
@@ -234,6 +316,7 @@ const props = defineProps({
                             </div>
                         </div>
                     </div>
+                    <CreateTodoModal :isOpen="isCreateModalOpen" @close="closeCreateModal" @taskCreated="taskCreated" />
                 </div>
             </div>
         </div>
@@ -242,7 +325,7 @@ const props = defineProps({
     <Modal :isOpen="isEditModalOpen" @close="closeEditModal">
         <template #default>
             <h2 class="text-lg font-semibold">Edit Task</h2>
-            <form @submit.prevent="updateTask" class="mt-4 space-y-4">
+            <form @submit.prevent="updateTask" class="mt-4 space-y-6">
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label for="status" class="block text-sm font-medium text-gray-700">Status</label>
@@ -250,7 +333,7 @@ const props = defineProps({
                             class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
                             <option value="pending">Pending</option>
                             <option value="backlog">Backlog</option>
-                            <option value="completed">Complete</option>
+                            <option value="complete">Complete</option>
                         </select>
                     </div>
                     <div>
@@ -275,7 +358,8 @@ const props = defineProps({
                     <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
                     <textarea id="description" v-model="currentTask.description"
                         class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        required></textarea>
+                        required>
+                    </textarea>
                 </div>
                 <div class="flex justify-end">
                     <button type="button" @click="closeEditModal"
@@ -283,7 +367,7 @@ const props = defineProps({
                         Cancel
                     </button>
                     <button type="submit"
-                        class="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700">
+                        class="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:ring-1">
                         Save
                     </button>
                 </div>
