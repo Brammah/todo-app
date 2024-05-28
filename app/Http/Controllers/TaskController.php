@@ -17,7 +17,7 @@ class TaskController extends Controller
 
         return Inertia::render('ToDo/ViewTodo', [
             'tasks' => $tasks,
-            'status' => session('status'),
+            'successMessage' => session('success'),
         ]);
     }
 
@@ -63,6 +63,11 @@ class TaskController extends Controller
      */
     public function destroy(Task $task)
     {
-        //
+        $task->delete();
+
+        session()->flash('success', 'Task deleted successfully.');
+
+        return response()->json(['success' => 'Task Deleted'], 200);
     }
+
 }

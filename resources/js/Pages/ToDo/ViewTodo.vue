@@ -2,9 +2,15 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, usePage } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import { format } from 'date-fns';
+import axios from 'axios';
 
 const page = usePage();
 const tasks = ref(page.props.tasks);
+
+const formatDate = (dateString) => {
+    return format(new Date(dateString), "MMMM do yyyy");
+};
 
 const accordions = ref(Object.keys(tasks.value).map(status => ({
     title: status.charAt(0).toUpperCase() + status.slice(1),
@@ -15,9 +21,33 @@ const accordions = ref(Object.keys(tasks.value).map(status => ({
 const toggleAccordion = (index) => {
     accordions.value[index].isOpen = !accordions.value[index].isOpen;
 };
+
+const dropdownOpen = ref({});
+
+const toggleDropdown = (taskId) => {
+    dropdownOpen.value[taskId] = !dropdownOpen.value[taskId];
+};
+
+const deleteTask = async (taskId) => {
+    if (confirm('Are you sure you want to delete this task?')) {
+        try {
+            await axios.delete(`/task/${taskId}`);
+            for (const status in tasks.value) {
+                tasks.value[status] = tasks.value[status].filter(task => task.id !== taskId);
+            }
+            const successMessage = encodeURIComponent('Task deleted.');
+            window.location.href = `/task`;
+        } catch (error) {
+            console.error('Error deleting task:', error);
+        }
+    }
+};
+
+const props = defineProps({
+    successMessage: String
+});
+
 </script>
-
-
 
 <template>
 
@@ -32,6 +62,9 @@ const toggleAccordion = (index) => {
             <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
                 <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
                     <div class="px-8 py-4">
+                        <div v-if="successMessage" class="p-3 my-4 text-white bg-green-600 rounded-md">
+                            {{ successMessage }}
+                        </div>
                         <div class="flex items-center justify-between">
                             <h1 class="text-2xl font-bold">Pending</h1>
                             <button
@@ -97,13 +130,52 @@ const toggleAccordion = (index) => {
                                 class="overflow-hidden transition-all duration-300 ease-in-out">
                                 <div class="p-4 text-sm leading-normal text-blue-gray-500/80">
                                     <div v-for="task in accordion.content" :key="task.id"
-                                        class="mb-2 border rounded-md card">
+                                        class="m-4 border rounded-md card">
                                         <div class="flex items-center justify-between p-4 card-header">
                                             <div class="flex-col">
-                                                <div class="card-title">{{ task.name }}</div>
-                                                <div class="text-gray-600">{{ task.created_at }}</div>
+                                                <div class="card-title text-dark">{{ task.name }}</div>
+                                                <div class="text-gray-600">{{ formatDate(task.created_at) }}</div>
                                             </div>
-                                            <div class="card-toolbar">Toolbar</div>
+                                            <div class="card-toolbar">
+                                                <div class="relative inline-block text-left">
+                                                    <div>
+                                                        <button type="button"
+                                                            class="inline-flex w-full justify-center gap-x-1.5 outline-0 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                                                            @click="toggleDropdown(task.id)">
+                                                            <i class="fa-solid fa-ellipsis"></i>
+                                                        </button>
+                                                    </div>
+                                                    <div v-if="dropdownOpen[task.id]"
+                                                        class="absolute right-0 z-10 w-56 mt-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                                                        role="menu" aria-orientation="vertical">
+                                                        <div class="py-1" role="none">
+                                                            <a href="#" class="block px-4 py-2 text-sm text-green-500"
+                                                                role="menuitem">
+                                                                <i
+                                                                    class="text-green-500 fa-regular fa-circle-check me-2"></i>
+                                                                Mark as Done
+                                                            </a>
+                                                            <a href="#" class="block px-4 py-2 text-sm text-black"
+                                                                role="menuitem">
+                                                                <i class="text-black fa-solid fa-rotate-left me-2"></i>
+                                                                Move to Backlog
+                                                            </a>
+                                                            <a href="#" class="block px-4 py-2 text-sm text-black"
+                                                                role="menuitem">
+                                                                <i class="text-black fa-solid fa-pencil me-2"></i>
+                                                                Edit Todo
+                                                            </a>
+                                                            <a href="#" @click.prevent="deleteTask(task.id)"
+                                                                class="block px-4 py-2 text-sm text-red-700"
+                                                                role="menuitem">
+                                                                <i
+                                                                    class="text-red-700 fa-regular fa-trash-can me-2"></i>
+                                                                Delete Todo
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                         <div class="px-4 card-body">{{ task.description }}</div>
                                         <div class="my-4 card-footer">
