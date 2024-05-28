@@ -7,6 +7,7 @@ import axios from 'axios';
 
 const page = usePage();
 const tasks = ref(page.props.tasks);
+const successMessage = ref('');
 
 const formatDate = (dateString) => {
     return format(new Date(dateString), "MMMM do yyyy");
@@ -35,8 +36,11 @@ const deleteTask = async (taskId) => {
             for (const status in tasks.value) {
                 tasks.value[status] = tasks.value[status].filter(task => task.id !== taskId);
             }
-            const successMessage = encodeURIComponent('Task deleted.');
+            successMessage.value = 'Task deleted.';
             window.location.href = `/task`;
+            setTimeout(() => {
+                successMessage.value = '';
+            }, 3000);
         } catch (error) {
             console.error('Error deleting task:', error);
         }
