@@ -73,6 +73,7 @@ const updateTask = async () => {
         }
         closeEditModal();
         successMessage.value = 'Task updated successfully.';
+        window.location.href = `/task`;
         setTimeout(() => {
             successMessage.value = '';
         }, 3000);

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Task;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class TaskController extends Controller
@@ -55,7 +56,17 @@ class TaskController extends Controller
      */
     public function update(Request $request, Task $task)
     {
-        //
+        $validatedData = $request->validate([
+            'name' => ['required', 'string'],
+            'status' => ['required', 'string'],
+            'priority' => ['required', 'string'],
+            'description' => ['required', 'string'],
+        ]);
+
+        DB::transaction(function () use ($validatedData, $task) {
+            $task->update($validatedData);
+            return response()->json(['success' => 'Task Updated'], 200);
+        });
     }
 
     /**
@@ -64,8 +75,6 @@ class TaskController extends Controller
     public function destroy(Task $task)
     {
         $task->delete();
-
-        session()->flash('success', 'Task deleted successfully.');
 
         return response()->json(['success' => 'Task Deleted'], 200);
     }
