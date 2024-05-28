@@ -1,5 +1,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import Modal from '/resources/js/Pages/ToDo/EditTodo.vue';
 import { Head, usePage } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import { format } from 'date-fns';
@@ -44,6 +45,39 @@ const deleteTask = async (taskId) => {
         } catch (error) {
             console.error('Error deleting task:', error);
         }
+    }
+};
+
+const isEditModalOpen = ref(false);
+const currentTask = ref(null);
+
+const openEditModal = (task) => {
+    currentTask.value = { ...task };
+    isEditModalOpen.value = true;
+};
+
+const closeEditModal = () => {
+    isEditModalOpen.value = false;
+    currentTask.value = null;
+};
+
+const updateTask = async () => {
+    try {
+        await axios.put(`/task/${currentTask.value.id}`, currentTask.value);
+        for (const status in tasks.value) {
+            const taskIndex = tasks.value[status].findIndex(task => task.id === currentTask.value.id);
+            if (taskIndex !== -1) {
+                tasks.value[status][taskIndex] = { ...currentTask.value };
+                break;
+            }
+        }
+        closeEditModal();
+        successMessage.value = 'Task updated successfully.';
+        setTimeout(() => {
+            successMessage.value = '';
+        }, 3000);
+    } catch (error) {
+        console.error('Error updating task:', error);
     }
 };
 
@@ -92,7 +126,7 @@ const props = defineProps({
                                         <option value="" disabled selected class="text-gray-500">Status:</option>
                                         <option value="all">All</option>
                                         <option value="pending">Pending</option>
-                                        <option value="in-progress">Backlog</option>
+                                        <option value="backlog">Backlog</option>
                                         <option value="completed">Complete</option>
                                     </select>
                                 </div>
@@ -164,7 +198,8 @@ const props = defineProps({
                                                                 <i class="text-black fa-solid fa-rotate-left me-2"></i>
                                                                 Move to Backlog
                                                             </a>
-                                                            <a href="#" class="block px-4 py-2 text-sm text-black"
+                                                            <a href="#" @click.prevent="openEditModal(task)"
+                                                                class="block px-4 py-2 text-sm text-black"
                                                                 role="menuitem">
                                                                 <i class="text-black fa-solid fa-pencil me-2"></i>
                                                                 Edit Todo
@@ -202,4 +237,56 @@ const props = defineProps({
             </div>
         </div>
     </AuthenticatedLayout>
+
+    <Modal :isOpen="isEditModalOpen" @close="closeEditModal">
+        <template #default>
+            <h2 class="text-lg font-semibold">Edit Task</h2>
+            <form @submit.prevent="updateTask" class="mt-4 space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="status" class="block text-sm font-medium text-gray-700">Status</label>
+                        <select id="status" v-model="currentTask.status"
+                            class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="pending">Pending</option>
+                            <option value="backlog">Backlog</option>
+                            <option value="completed">Complete</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="priority" class="block text-sm font-medium text-gray-700">Priority</label>
+                        <select id="priority" v-model="currentTask.priority"
+                            class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="lowest">Lowest</option>
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                            <option value="highest">Highest</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
+                    <input type="text" id="name" v-model="currentTask.name"
+                        class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        required>
+                </div>
+                <div>
+                    <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                    <textarea id="description" v-model="currentTask.description"
+                        class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        required></textarea>
+                </div>
+                <div class="flex justify-end">
+                    <button type="button" @click="closeEditModal"
+                        class="px-4 py-2 mr-2 text-sm font-semibold text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                        class="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700">
+                        Save
+                    </button>
+                </div>
+            </form>
+        </template>
+    </Modal>
 </template>
