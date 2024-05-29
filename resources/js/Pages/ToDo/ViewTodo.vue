@@ -7,9 +7,6 @@ import { ref } from 'vue';
 import { format } from 'date-fns';
 import axios from 'axios';
 
-import CKEditor from '@ckeditor/ckeditor5-vue';
-import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
-
 const page = usePage();
 const tasks = ref(page.props.tasks);
 const successMessage = ref('');
@@ -97,6 +94,7 @@ const updateTask = async () => {
         }
         closeEditModal();
         successMessage.value = 'Task updated successfully.';
+        window.location.href = `/task`;
         setTimeout(() => {
             successMessage.value = '';
         }, 3000);
@@ -132,12 +130,8 @@ const taskCreated = () => {
                         <div class="flex items-center justify-between">
                             <div class="flex items-center">
                                 <h1 class="text-2xl font-bold me-5">
-                                    <img
-                                        v-if="user.photo"
-                                        :src="`/storage/photos/${user.photo}`"
-                                        class="object-cover w-20 h-20 mt-4 rounded-full"
-                                        alt="Image preview"
-                                    />
+                                    <img v-if="user.photo" :src="`/storage/photos/${user.photo}`"
+                                        class="object-cover w-20 h-20 mt-4 rounded-full" alt="Image preview" />
                                 </h1>
 
                                 <div class="flex-col">
@@ -153,17 +147,17 @@ const taskCreated = () => {
                                     </div>
                                     <div class="flex card-footer">
                                         <span class="me-2">
-                                             <i
-                                                class="text-red-600 fa-solid fa-angles-up me-1"></i>{{ counts.highest_priority }}
-                                            </span>
-                                        <span class="me-2">
                                             <i
-                                                class="text-orange-400 fa-solid fa-equals me-1"></i> {{ counts.medium_priority }}
-                                            </span>
+                                                class="text-red-600 fa-solid fa-angles-up me-1"></i>{{ counts.highest_priority }}
+                                        </span>
+                                        <span class="me-2">
+                                            <i class="text-orange-400 fa-solid fa-equals me-1"></i>
+                                            {{ counts.medium_priority }}
+                                        </span>
                                         <span class="me-2">
                                             <i
                                                 class="text-blue-800 fa-solid fa-angles-down me-1"></i>{{ counts.lowest_priority }}
-                                            </span>
+                                        </span>
                                     </div>
                                 </div>
                                 <div class="p-5 bg-green-100 rounded-md card me-3">
@@ -186,7 +180,7 @@ const taskCreated = () => {
 
                     <div class="px-8 py-4">
                         <div class="flex items-center justify-between">
-                            <h1 class="text-2xl font-bold">Pending</h1>
+                            <h1 class="text-2xl font-bold">Todos</h1>
                             <button @click="openCreateModal"
                                 class="p-2 text-white bg-indigo-500 rounded-md btn-block btn-sm hover:bg-indigo-600">
                                 <i class="fa fa-plus me-2"></i> Add Todo
@@ -223,8 +217,8 @@ const taskCreated = () => {
                                         </option>
                                         <option value="high"><i class="text-red-600 fa-solid fa-angle-up me-2"></i>High
                                         </option>
-                                        <option value="medium"> <i
-                                                class="text-red-600 fa-solid fa-equals me-2"></i> Medium</option>
+                                        <option value="medium"> <i class="text-red-600 fa-solid fa-equals me-2"></i>
+                                            Medium</option>
                                         <option value="low"><i class="text-blue-800 fa-solid fa-angle-down me-2"></i>Low
                                         </option>
                                         <option value="lowest"><i
@@ -324,52 +318,63 @@ const taskCreated = () => {
 
     <Modal :isOpen="isEditModalOpen" @close="closeEditModal">
         <template #default>
-            <h2 class="text-lg font-semibold">Edit Task</h2>
+            <div class="border-b modal-header">
+                <button @click="closeModal" class="absolute text-gray-500 top-4 right-6 hover:text-gray-700"
+                    aria-label="Close modal">
+                    <i class="fa fa-times"></i>
+                </button>
+                <h2 id="modal-title" class="text-lg font-bold">Edit Task</h2>
+            </div>
             <form @submit.prevent="updateTask" class="mt-4 space-y-6">
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label for="status" class="block text-sm font-medium text-gray-700">Status</label>
-                        <select id="status" v-model="currentTask.status"
-                            class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                            <option value="pending">Pending</option>
-                            <option value="backlog">Backlog</option>
-                            <option value="complete">Complete</option>
-                        </select>
+                <div class="space-y-4 modal-body">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="status" class="block text-sm font-medium text-gray-700">Status</label>
+                            <select id="status" v-model="currentTask.status" placeholder="select status"
+                                class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <option value="pending">Pending</option>
+                                <option value="backlog">Backlog</option>
+                                <option value="complete">Complete</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="priority" class="block text-sm font-medium text-gray-700">Priority</label>
+                            <select id="priority" v-model="currentTask.priority" placeholder="select priority"
+                                class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <option value="lowest">Lowest</option>
+                                <option value="low">Low</option>
+                                <option value="medium">Medium</option>
+                                <option value="high">High</option>
+                                <option value="highest">Highest</option>
+                            </select>
+                        </div>
                     </div>
                     <div>
-                        <label for="priority" class="block text-sm font-medium text-gray-700">Priority</label>
-                        <select id="priority" v-model="currentTask.priority"
-                            class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                            <option value="lowest">Lowest</option>
-                            <option value="low">Low</option>
-                            <option value="medium">Medium</option>
-                            <option value="high">High</option>
-                            <option value="highest">Highest</option>
-                        </select>
+                        <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
+                        <input type="text" id="name" v-model="currentTask.name" placeholder="enter task title"
+                            class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            required>
                     </div>
-                </div>
-                <div>
-                    <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
-                    <input type="text" id="name" v-model="currentTask.name"
-                        class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        required>
-                </div>
-                <div>
-                    <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
-                    <textarea id="description" v-model="currentTask.description"
-                        class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        required>
+                    <div>
+                        <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                        <textarea id="description" v-model="currentTask.description"
+                            placeholder="enter task description" rows="7"
+                            class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            required>
                     </textarea>
+                    </div>
                 </div>
-                <div class="flex justify-end">
-                    <button type="button" @click="closeEditModal"
-                        class="px-4 py-2 mr-2 text-sm font-semibold text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300">
-                        Cancel
-                    </button>
-                    <button type="submit"
-                        class="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:ring-1">
-                        Save
-                    </button>
+                <div class="border-t modal-footer">
+                    <div class="flex justify-end mt-3">
+                        <button type="button" @click="closeEditModal"
+                            class="px-4 py-2 mr-2 text-sm font-semibold text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300">
+                            Cancel
+                        </button>
+                        <button type="submit"
+                            class="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:ring-1">
+                            Save
+                        </button>
+                    </div>
                 </div>
             </form>
         </template>
