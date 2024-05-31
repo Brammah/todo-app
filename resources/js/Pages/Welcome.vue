@@ -41,7 +41,7 @@ defineProps({
         </div>
     </header>
 
-    <div class="relative items-center justify-center w-full overflow-x-hidden lg:pt-20 lg:pb-20 xl:pt-20 xl:pb-20">
+    <div class="relative items-center justify-center w-full overflow-x-hidden lg:pt-16 lg:pb-16 xl:pt-16 xl:pb-16">
         <div
             class="container flex flex-col items-center justify-between h-full max-w-6xl px-8 mx-auto -mt-32 lg:flex-row xl:px-0">
             <div

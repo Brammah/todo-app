@@ -6,6 +6,7 @@ import { Head, usePage } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import { format } from 'date-fns';
 import axios from 'axios';
+import CustomDropdown from '/resources/js/Pages/ToDo/CustomDropdown.vue';
 
 const page = usePage();
 const tasks = ref(page.props.tasks);
@@ -113,7 +114,27 @@ const taskCreated = () => {
         successMessage.value = '';
     }, 3000);
 };
+
+const statusOptions = [
+    { label: 'All', value: 'all' },
+    { label: 'Pending', value: 'pending' },
+    { label: 'Backlog', value: 'backlog' },
+    { label: 'Complete', value: 'complete' }
+];
+
+const priorityOptions = [
+    { label: 'All', value: 'all', iconClass: 'fa-solid fa-minus' },
+    { label: 'Highest', value: 'highest', iconClass: 'text-red-600 fa-solid fa-angles-up' },
+    { label: 'High', value: 'high', iconClass: 'text-red-600 fa-solid fa-angle-up' },
+    { label: 'Medium', value: 'medium', iconClass: 'text-red-600 fa-solid fa-equals' },
+    { label: 'Low', value: 'low', iconClass: 'text-blue-800 fa-solid fa-angle-down' },
+    { label: 'Lowest', value: 'lowest', iconClass: 'text-blue-800 fa-solid fa-angles-down' }
+];
+
+const selectedStatus = ref(null);
+const selectedPriority = ref(null);
 </script>
+
 
 <template>
 
@@ -196,35 +217,14 @@ const taskCreated = () => {
                                         class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
                                 </div>
                                 <div class="w-full px-2 mb-4 lg:w-3/12 lg:mb-0">
-                                    <select
-                                        class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        name="status" id="status">
-                                        <option value="" disabled selected class="text-gray-500">Status:</option>
-                                        <option value="all">All</option>
-                                        <option value="pending">Pending</option>
-                                        <option value="backlog">Backlog</option>
-                                        <option value="complete">Complete</option>
-                                    </select>
+                                    <custom-dropdown :options="statusOptions" placeholder="Status:"
+                                        v-model="selectedStatus">
+                                    </custom-dropdown>
                                 </div>
                                 <div class="w-full px-2 mb-4 lg:w-3/12 lg:mb-0">
-                                    <select
-                                        class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        name="priority" id="priority">
-                                        <option value="" disabled selected class="text-gray-500">Priority:</option>
-                                        <option value="all">All</option>
-                                        <option value="highest"><i
-                                                class="text-red-600 fa-solid fa-angles-up me-2"></i>Highest
-                                        </option>
-                                        <option value="high"><i class="text-red-600 fa-solid fa-angle-up me-2"></i>High
-                                        </option>
-                                        <option value="medium"> <i class="text-red-600 fa-solid fa-equals me-2"></i>
-                                            Medium</option>
-                                        <option value="low"><i class="text-blue-800 fa-solid fa-angle-down me-2"></i>Low
-                                        </option>
-                                        <option value="lowest"><i
-                                                class="text-blue-800 fa-solid fa-angles-down me-2"></i>Lowest
-                                        </option>
-                                    </select>
+                                    <custom-dropdown :options="priorityOptions" placeholder="Priority:"
+                                        v-model="selectedPriority">
+                                    </custom-dropdown>
                                 </div>
                             </div>
                         </div>

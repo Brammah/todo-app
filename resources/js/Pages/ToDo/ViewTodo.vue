@@ -3,7 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import Modal from '/resources/js/Pages/ToDo/EditTodo.vue';
 import CreateTodoModal from '/resources/js/Pages/ToDo/CreateTodoModal.vue';
 import { Head, usePage } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { format } from 'date-fns';
 import axios from 'axios';
 import CustomDropdown from '/resources/js/Pages/ToDo/CustomDropdown.vue';
@@ -20,15 +20,9 @@ const formatDate = (dateString) => {
 const counts = ref(page.props.counts);
 const { user } = usePage().props;
 
-const accordions = ref(Object.keys(tasks.value).map(status => ({
-    title: status.charAt(0).toUpperCase() + status.slice(1),
-    content: tasks.value[status],
-    isOpen: false
-})));
-
-const toggleAccordion = (index) => {
-    accordions.value[index].isOpen = !accordions.value[index].isOpen;
-};
+const searchQuery = ref('');
+const selectedStatus = ref(null);
+const selectedPriority = ref(null);
 
 const dropdownOpen = ref({});
 
@@ -117,9 +111,9 @@ const taskCreated = () => {
 
 const statusOptions = [
     { label: 'All', value: 'all' },
-    { label: 'Pending', value: 'pending' },
-    { label: 'Backlog', value: 'backlog' },
-    { label: 'Complete', value: 'complete' }
+    { label: 'Pending', value: 'pending', iconClass: 'fa-solid fa-circle text-orange-500'  },
+    { label: 'Backlog', value: 'backlog', iconClass: 'fa-solid fa-circle text-indigo-500'  },
+    { label: 'Complete', value: 'complete', iconClass: 'fa-solid fa-circle text-green-500'  }
 ];
 
 const priorityOptions = [
@@ -131,9 +125,40 @@ const priorityOptions = [
     { label: 'Lowest', value: 'lowest', iconClass: 'text-blue-800 fa-solid fa-angles-down' }
 ];
 
-const selectedStatus = ref(null);
-const selectedPriority = ref(null);
+const filteredTasks = computed(() => {
+    return Object.keys(tasks.value).reduce((result, status) => {
+        result[status] = tasks.value[status].filter(task => {
+            const matchesSearch = !searchQuery.value || task.name.toLowerCase().includes(searchQuery.value.toLowerCase());
+            const matchesStatus = !selectedStatus.value || selectedStatus.value === 'all' || task.status === selectedStatus.value;
+            const matchesPriority = !selectedPriority.value || selectedPriority.value === 'all' || task.priority === selectedPriority.value;
+            return matchesSearch || matchesStatus || matchesPriority;
+        });
+        return result;
+    }, {});
+});
+
+const accordions = ref(Object.keys(filteredTasks.value).map(status => ({
+    title: status.charAt(0).toUpperCase() + status.slice(1),
+    content: filteredTasks.value[status],
+    isOpen: false
+})));
+
+watch([filteredTasks, selectedStatus, selectedPriority, searchQuery], () => {
+    accordions.value = Object.keys(filteredTasks.value).map(status => {
+        const existingAccordion = accordions.value.find(acc => acc.title.toLowerCase() === status);
+        return {
+            title: status.charAt(0).toUpperCase() + status.slice(1),
+            content: filteredTasks.value[status],
+            isOpen: existingAccordion ? existingAccordion.isOpen : false
+        };
+    });
+});
+
+const toggleAccordion = (index) => {
+    accordions.value[index].isOpen = !accordions.value[index].isOpen;
+};
 </script>
+
 
 
 <template>
@@ -209,11 +234,11 @@ const selectedPriority = ref(null);
                         </div>
                     </div>
 
-                    <div class="p-4">
+                       <div class="p-4">
                         <div class="p-4">
                             <div class="flex flex-wrap items-center -mx-2">
                                 <div class="w-full px-2 mb-4 lg:w-6/12 lg:mb-0">
-                                    <input type="text" placeholder="Search todos..."
+                                    <input type="text" v-model="searchQuery" placeholder="Search todos..."
                                         class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
                                 </div>
                                 <div class="w-full px-2 mb-4 lg:w-3/12 lg:mb-0">
